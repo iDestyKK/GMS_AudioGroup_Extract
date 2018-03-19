@@ -31,7 +31,7 @@ main(int argc, char** argv) {
 
 	char   *buf, fname[16];
 	FILE   *fp;
-	size_t s1, s2, p, n, rem, ffloc;
+	size_t s1, s2, p, n, rem, trk_num, ffloc;
 
 	fp = fopen(argv[1], "rb");
 
@@ -48,7 +48,11 @@ main(int argc, char** argv) {
 
 	//Skip to the byte read in at 0x14.
 	//That's where the first file is.
-	ffloc = *(int*)&buf[0x14];
+	trk_num = *(int*)&buf[0x10];
+	ffloc   = *(int*)&buf[0x14];
+
+	printf("Number of tracks: %d\n"    , trk_num);
+	printf("First Track Addr: 0x%08x\n", ffloc  );
 
 	for (p = ffloc, n = 0; p < s1; n++) {
 		s2 = *(int*)&buf[p];
@@ -56,6 +60,8 @@ main(int argc, char** argv) {
 
 		//Print out debug information and set file name.
 		printf("File at 0x%08x (Size %d)... ", p, s2);
+		
+		//TODO: Figure out file formats by Magic Number
 		sprintf(fname, "extract%03d.ogg", n);
 
 		//Extract the file
@@ -72,5 +78,6 @@ main(int argc, char** argv) {
 	}
 
 	//Have a nice day.
+	free(buf);
 	exit(0);
 }
