@@ -5,8 +5,8 @@
  *     Extracts file from files such as "audiogroup1.dat", etc which merely
  *     are package files that hold files in it.
  *
- *     This was only tested on a single "audiogroup1.dat" file. Will improve
- *     if this glitches out on other files.
+ *     This was only tested on two "audiogroup1.dat" files. Will improve if
+ *     this glitches out on other files.
  *
  * Synopsis:
  *     ./extract file
@@ -31,7 +31,7 @@ main(int argc, char** argv) {
 
 	char   *buf, fname[16];
 	FILE   *fp;
-	size_t s1, s2, p, n, rem;
+	size_t s1, s2, p, n, rem, ffloc;
 
 	fp = fopen(argv[1], "rb");
 
@@ -46,8 +46,11 @@ main(int argc, char** argv) {
 	fread(buf, sizeof(char), s1, fp);
 	fclose(fp);
 
-	//Skip to 0x98. That's where the first file is.
-	for (p = 0x98, n = 0; p < s1; n++) {
+	//Skip to the byte read in at 0x14.
+	//That's where the first file is.
+	ffloc = *(int*)&buf[0x14];
+
+	for (p = ffloc, n = 0; p < s1; n++) {
 		s2 = *(int*)&buf[p];
 		p += 4;
 
