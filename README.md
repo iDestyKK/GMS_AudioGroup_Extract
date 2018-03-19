@@ -5,7 +5,7 @@ Probably never going to touch this code ever again, but this will extract the fi
 It turns out that these are package files that just store the audio files along with their size.
 
 The number of tracks is found as a 4 byte integer at 0x10.
-The first file's size can be found by reading a 4 byte integer at 0x14.
+The first file's size address can be found by reading a 4 byte integer at 0x14.
 The file size is stored as a 4 byte integer.
 The bytes after that are the contents of the file.
 After that, the next size and file is read.
