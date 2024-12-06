@@ -21,6 +21,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+
+void file_extract(char *buf, size_t pos, char *fname) {
+	FILE *fp;
+	uint32_t p, s;
+
+	p = pos + 4;                 // Offset of file
+	s = *(uint32_t *) &buf[pos]; // Size of file
+
+	printf("File at 0x%08x (Size %u)...", p, s);
+
+	// Dump
+	fp = fopen(fname, "wb");
+	fwrite(&buf[p], sizeof(char), s, fp);
+	fclose(fp);
+
+	printf(" Extracted!\n");
+}
 
 main(int argc, char** argv) {
 	//Check arguments
@@ -29,52 +47,33 @@ main(int argc, char** argv) {
 		exit(1);
 	}
 
-	char   *buf, fname[16];
+	char   *buf, fname[32];
 	FILE   *fp;
-	size_t s1, s2, p, n, rem, trk_num, ffloc;
+	size_t fsz, i, trk_num, ffloc, pos, num_zero, ztmp;
 
 	fp = fopen(argv[1], "rb");
 
 	//Get size of the file
 	fseek(fp, 0, SEEK_END);
-	s1 = ftell(fp);
+	fsz = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 
-
 	//Read the entire file into a buffer. We'll be doing this all in memory.
-	buf = malloc(s1 * sizeof(char));
-	fread(buf, sizeof(char), s1, fp);
+	buf = malloc(fsz * sizeof(char));
+	fread(buf, sizeof(char), fsz, fp);
 	fclose(fp);
 
-	//Skip to the byte read in at 0x14.
-	//That's where the first file is.
+	// Track number information
 	trk_num = *(int*)&buf[0x10];
-	ffloc   = *(int*)&buf[0x14];
 
-	printf("Number of tracks: %d\n"    , trk_num);
-	printf("First Track Addr: 0x%08x\n", ffloc  );
+	// Number of 0's in file name
+	for (ztmp = trk_num, num_zero = 1; ztmp >= 10; ztmp /= 10, num_zero++);
 
-	for (p = ffloc, n = 0; p < s1; n++) {
-		s2 = *(int*)&buf[p];
-		p += 4;
+	// Skip to each file and extract
+	for (i = 0, pos = 0x14; i < trk_num; i++, pos += 4) {
+		sprintf(fname, "extract%0*d.ogg", num_zero, i);
 
-		//Print out debug information and set file name.
-		printf("File at 0x%08x (Size %d)... ", p, s2);
-		
-		//TODO: Figure out file formats by Magic Number
-		sprintf(fname, "extract%03d.ogg", n);
-
-		//Extract the file
-		fp = fopen(fname, "wb");
-		fwrite(&buf[p], sizeof(char), s2, fp);
-		fclose(fp);
-		printf("Extracted!\n");
-
-		//The file size must be at an address of a multiple of 4.
-		rem = s2 % 4;
-		if (rem == 0)
-			rem = 4;
-		p += s2 + 4 - rem;
+		file_extract(buf, *(uint32_t *) &buf[pos], fname);
 	}
 
 	//Have a nice day.
